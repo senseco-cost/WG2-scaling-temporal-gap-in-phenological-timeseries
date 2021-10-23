@@ -1,1 +1,94 @@
+# use R software
 
+library(zoo)
+library(xts)
+library(forecast)
+library(seas)
+library(bfast)
+library(devtools)
+install_github('loicdtx/bfastSpatial')
+library(bfastSpatial)  # added 5/2/2019
+library(lubridate)
+library(ggplot2)
+
+# load data
+data(tura)
+
+# get the image dates
+dates <- getZ(tura)
+
+selected_pixel <- 90
+
+# number of valid values in TS
+nbr.NA <- sum(!is.na( !as.vector(tura[selected_pixel])))
+
+# create a regular time series object by combining data and date information
+(s <- bfastts(as.vector(tura[selected_pixel]), dates, type = c("irregular")))
+
+## Time Series:
+## Start = c(1984, 157) 
+## End = c(2013, 101) 
+## Frequency = 365 
+# First day of the Time Series
+(first.day <- head(date_decimal(as.numeric(time(s))),1))
+## [1] "1984-06-05 10:15:27 UTC"
+
+# Last day of the Time Series
+(last.day <- tail(date_decimal(as.numeric(time(s))),1))
+## [1] "2013-04-10 23:59:59 UTC"
+s.d.linear <- round(na.approx(s),0) 
+
+# added 3/3/2019
+# convert the time series to a data.frame 
+time.series.to.dataframe <- function(time_series, source) {
+  
+  s.df           <- data.frame(as.numeric(time_series))
+  colnames(s.df) <- "NDVI"
+  s.df$Time      <- as.Date(date_decimal(as.numeric(time(time_series))))
+  s.df$Type      <- source
+  return(s.df)
+  
+}
+############### Daily Timeseries################
+# create a data.frame
+s.d.linear.df <- time.series.to.dataframe(s.d.linear, "Linear Interpolation")
+
+######################Decomposition##################
+s.d.periodic <- round(na.interp(s),0)
+
+################aggregation###############
+aggregate.daily.to.weekly <- function(daily.ts) {
+    
+  dates      <- as.Date(date_decimal(as.numeric(time(daily.ts))))
+    
+  xts.daily  <- xts(daily.ts, order.by = dates)
+  
+  xts.weekly <- round(xts::apply.weekly(xts.daily, median),0)  # xts
+  
+  start(xts.weekly)
+  ts.weekly <- ts(data = xts.weekly, 
+               # define the start and end (Year, Week)    
+               start = c(as.numeric(format(start(xts.weekly), "%Y")),
+                         as.numeric(format(start(xts.weekly), "%W"))), 
+               end   = c(as.numeric(format(end(xts.weekly), "%Y")), 
+                         as.numeric(format(end(xts.weekly), "%W"))), 
+               frequency = 52)
+   
+  return(ts.weekly)
+}
+
+s.w.linear   <- aggregate.daily.to.weekly(s.d.linear)
+
+start(s.w.linear)
+## [1] 1984   41
+
+end(s.w.linear)
+## [1] 2013   14
+s.w.periodic   <- aggregate.daily.to.weekly(s.d.periodic)
+
+
+#################withBFAST###########################
+fit <- bfast(s.f.periodic.window, h = 10/length(s.f.periodic.window), 
+             season = "harmonic", breaks = 2, max.iter = 2)
+
+plot(fit)
