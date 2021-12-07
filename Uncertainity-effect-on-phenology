@@ -1,1 +1,57 @@
 This code is written to introduce uncertainty in the phenology rasters of capturing the rapeseed in Bulgaria. With this aim, we assessed the impact of uncertainty on the simulations run for predicting the start and end of the season.  This concept is rarely discussed in the literature. The novel results have already been submitted for publication under the title 'Potential Impacts of Radiometric Uncertainty on the Estimation of Land Surface Phenology Metrics'. 
+##copy the content in Rstudio
+###### Summer School Exercise - WP2
+###### September 2021
+
+## Setting up working directory
+library(raster)
+library(rgdal)
+setwd("C:/Users/u0115271/Documents/PhD/Courses/Summer School/SENSECO 2021/project/data")
+
+## Loading data
+files <- list.files("P1-NoClouds", full.names = TRUE, patter="*.tif$")
+p1 <- stack(files)
+plot(p1[[62]])
+
+## Removing outliers
+out <- brick(extent(p1), nrows=nrow(p1), ncols=ncol(p1), crs=proj4string(p1), nl=nlayers(p1))
+for (i in 1:nlayers(p1)){
+  pi <- p1[[i]]
+  qi <- quantile(getValues(pi), c(0.05, 0.95), na.rm=T)
+  pi[pi<qi[1]]<-NA
+  pi[pi>qi[2]]<-NA
+  out[[i]] <- pi 
+}
+
+## Calculating average NDVI for each time step 
+## (used as the "typical" NDVI for that date)
+avg <- c()
+for (i in 1:nlayers(out)){
+  avg[i] <- mean(getValues(out[[i]]), na.rm=T)
+}
+plot(avg, type="l")
+
+## Simulating time series
+out_df <- as.data.frame(matrix(rep(NA,64), ncol = 64))
+for (y in 1:1000){
+  sim_ts <- c()
+  for (i in 1:length(avg)){
+    dat <- rnorm(100000, mean = 0, sd = avg[i]*0.02)
+    sim_noise <- dat[sample(1:length(dat), 1)]
+    sim_ts[i] <- sim_noise+avg[i]
+  }
+  out_df[y,]<-sim_ts
+}
+
+## Putting simulated time series in a raster
+sim_raster <- raster(ncols=10, nrows=100)
+final_stack <- brick(extent(sim_raster), ncols=ncol(sim_raster), nrows=nrow(sim_raster), nl=64)
+for(i in 1:ncol(out_df)){
+  sim_raster <- raster(ncols=10, nrows=100)
+  sim_raster[c(1:1000)] <- out_df[,i]
+  final_stack[[i]] <- sim_raster
+}
+
+## Exporting simulated rasters
+files <- list.files("P1-NoClouds", patter="*.tif$")
+writeRaster(final_stack, paste0("simulated_raster/",files), bylayer=TRUE)
