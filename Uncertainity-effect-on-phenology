@@ -1,4 +1,7 @@
-This code is written to introduce uncertainty in the phenology rasters of capturing the rapeseed in Bulgaria. With this aim, we assessed the impact of uncertainty on the simulations run for predicting the start and end of the season.  This concept is rarely discussed in the literature. The novel results have already been submitted for publication under the title 'Potential Impacts of Radiometric Uncertainty on the Estimation of Land Surface Phenology Metrics'. 
+This code is written to assess effect of uncertainty on the phenology of the rapeseed plantation in Bulgaria. With this aim, we applied 2% uncertainty on the simulated raster.
+The uncertainity effect is rarely discussed in the literature.Our results discussed them in detail, this work have already submitted for publication under the title
+'Potential Impacts of Radiometric Uncertainty on the Estimation of Land Surface Phenology Metrics'.
+
 ##copy the content in Rstudio
 ###### Summer School Exercise - WP2
 ###### September 2021
