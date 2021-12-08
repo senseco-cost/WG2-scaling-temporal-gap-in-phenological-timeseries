@@ -1,4 +1,4 @@
-#Cl·udio Silva #9/11/2021
+#Cl√°udio Silva #9/11/2021
 #Virtual mobility grant - NDVI time-series dta processing and validation from Mediterranean cork oak woodlands 
 
 #goodness-of-fit; t-test; Granger causality test and example of how to plot data w/ empty data points.
